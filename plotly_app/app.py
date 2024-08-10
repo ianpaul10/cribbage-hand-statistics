@@ -26,19 +26,18 @@ row_of_df = df.loc[df["dealt_hand"] == "2H,3H,4H,5H,6H,7H"]
 # fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
 fig = px.bar(df, x="dealt_hand", y="max_hand_max_points")
 
-app.layout = html.Div(children=[
-    html.H1(children='Hello Dash :D'),
-
-    html.Div(children='''
+app.layout = html.Div(
+    children=[
+        html.H1(children="Hello Dash :D"),
+        html.Div(
+            children="""
         Dash: A web application framework for your data.
-    '''),
+    """
+        ),
+        dcc.Graph(id="example-graph", figure=fig),
+        html.Div(children=row_of_df["dealt_hand"]),
+    ]
+)
 
-    dcc.Graph(
-        id='example-graph',
-        figure=fig
-    ),
-    html.Div(children=row_of_df["dealt_hand"])
-])
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
