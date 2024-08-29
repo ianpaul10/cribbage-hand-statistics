@@ -36,6 +36,9 @@ app.layout = html.Div(
         ),
         dcc.Graph(id="example-graph", figure=fig),
         html.Div(children=row_of_df["dealt_hand"]),
+        html.Div(children=row_of_df["max_hand"]),
+        html.Div(children=row_of_df["max_hand_max_points"]),
+        html.Div(children=row_of_df["max_hand_ev_points"]),
     ]
 )
 
