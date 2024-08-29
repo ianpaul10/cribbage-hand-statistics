@@ -17,11 +17,14 @@ app = Dash(__name__)
 # })
 
 # df = pd.read_csv("csv_outputs/crib_hands_output.csv")
-df = pd.read_csv("crib_hands_output_smol.csv")
+# df = pd.read_parquet("crib_hands_output_smol.parquet")
+df = pd.read_parquet("csv_outputs/crib_hands_output_big_boi.parquet")
+# df = pd.read_csv("crib_hands_output_smol.csv")
 
 df = df.head(20)
 
-row_of_df = df.loc[df["dealt_hand"] == "2H,3H,4H,5H,6H,7H"]
+# should sort input string to make sure it matches one of the hands
+row_of_df = df.loc[df["dealt_hand"] == "2H,3H,4H,5H,6H,8H"]
 
 # fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
 fig = px.bar(df, x="dealt_hand", y="max_hand_max_points")
