@@ -24,7 +24,15 @@ df = pd.read_parquet("csv_outputs/crib_hands_output_big_boi.parquet")
 df = df.head(20)
 
 # should sort input string to make sure it matches one of the hands
-row_of_df = df.loc[df["dealt_hand"] == "2H,3H,4H,5H,6H,8H"]
+def sort_hand(hand: str) -> str:
+    cards = hand.split(",")
+    cards.sort()
+    return ",".join(cards)
+
+hand = "2H,3H,4H,5H,6H,8H"
+sorted_hand = sort_hand(hand)
+
+row_of_df = df.loc[df["dealt_hand_sorted_str"] == sorted_hand]
 
 # fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
 fig = px.bar(df, x="dealt_hand", y="max_hand_max_points")
