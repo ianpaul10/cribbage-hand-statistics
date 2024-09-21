@@ -1,4 +1,5 @@
 from itertools import combinations
+from typing import Union
 import pandas as pd
 
 starting_hand_size = 6
@@ -28,11 +29,11 @@ class Deck:
     _pretty_suits = ["♥", "♦", "♠", "♣"]
     _boring_suits = ["H", "D", "S", "C"]
 
-    _values = list(range(2, 10))
+    _values: list[Union[int, str]] = list(range(2, 10))
     _values.extend(["T", "J", "Q", "K", "A"])
 
-    deck = []
-    boring_deck = []
+    deck: list[str] = []
+    boring_deck: list[str] = []
     for i in range(len(_pretty_suits)):
         for value in _values:
             deck.append(f"{value}{_pretty_suits[i]}")
