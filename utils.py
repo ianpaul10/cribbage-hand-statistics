@@ -49,7 +49,6 @@ class TotalHand:
 
 
 class DealtHand:
-
     def __init__(self, dealt_cards: list):
         remaining_deck = Deck.deck  # AKA possible cut cards
         for card in self.dealt_cards:
