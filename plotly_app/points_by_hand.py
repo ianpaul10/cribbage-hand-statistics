@@ -93,10 +93,12 @@ class DealtHand:
         assert len(dealt_cards) == dealt_hand_size
         self.dealt_cards = dealt_cards
 
+        # len == 46
         self.possible_cut_cards = [
             card for card in self.deck if card not in dealt_cards
         ]
 
+        # len == 15
         self.hand_candidates = list(combinations(dealt_cards, r=hand_size))
 
         # self.possible_hands = [
@@ -104,20 +106,29 @@ class DealtHand:
         #     for hand in self.hand_candidates
         # ]
 
+        # len == 690
+        _hand_tuples = []
         self.possible_hands_strs = []
         for hand in self.hand_candidates:
             hcl = list(hand)
+            hcl.sort()
+            hcl_str = ",".join(hcl)
             for cut_card in self.possible_cut_cards:
                 hand_list = hcl + [cut_card]
                 hand_list.sort()
                 hand_list_str = ",".join(hand_list)
                 self.possible_hands_strs.append(hand_list_str)
+                _hand_tuples.append((hand_list_str, hcl_str, cut_card))
 
         # print(f"{len(self.possible_hands_strs)=}")
+        _sub_df = hand_to_points_df.loc[self.possible_hands_strs]
 
-        self.point_conjoined = hand_to_points_df.loc[
-            self.possible_hands_strs, "points"
-        ].tolist()
+        # TODO: for me tm. Make sub_df add the hand and cut card as separate columns
+        # then we'll be able to pivot the df and have it be rows of cut cards and columns of hands, and values should line up correctly
+        # current way is a hack
+
+
+        self.point_conjoined = _sub_df["points"].tolist()
         self.points = [
             self.point_conjoined[i : i + len(self.possible_cut_cards)]
             for i in range(0, len(self.point_conjoined), len(self.possible_cut_cards))
