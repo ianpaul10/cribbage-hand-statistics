@@ -51,13 +51,15 @@ hand_obj = DealtHand(hand, df)
 hand_obj_dict = hand_obj.to_dict()
 hand_obj_dict_list = list(hand_obj_dict.items())
 
-hand_records = hand_obj.get_df().to_dict("records")
+# hand_records = hand_obj.get_df().to_dict("records")
+hand_records = hand_obj.pivoted_df.to_dict("records")
+# hand_records = hand_obj.pivoted_df.to_dict(orient="list")
 print(hand_records)
-print([{"name": i, "id": i} for i in hand_obj.to_dict().keys()])
+print([{"name": i, "id": i} for i in hand_obj.pivoted_df.columns])
 
 dt = dash_table.DataTable(
     hand_records,
-    [{"name": i, "id": i} for i in hand_obj_dict.keys()],
+    [{"name": i, "id": i} for i in hand_obj.pivoted_df.columns],
 )
 
 app.layout = html.Div(
