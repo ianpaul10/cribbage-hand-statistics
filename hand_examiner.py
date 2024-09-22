@@ -10,5 +10,6 @@ if __name__ == "__main__":
     hand_obj = DealtHand(hand, df)
 
     # print(hand_obj.to_dict())
-    print(hand_obj.pretty_print())
+    # print(hand_obj.pretty_print())
     print(hand_obj.get_df())
+    print(hand_obj.pivoted_df)
