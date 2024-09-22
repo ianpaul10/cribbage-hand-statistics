@@ -115,7 +115,6 @@ class DealtHand:
             hcl_str = ",".join(hcl)
             for cut_card in self.possible_cut_cards:
                 hand_list = hcl + [cut_card]
-                hand_list.sort()
                 hand_list_str = ",".join(hand_list)
                 self.possible_hands_strs.append(hand_list_str)
                 _hand_tuples.append((hand_list_str, hcl_str, cut_card))
@@ -127,6 +126,17 @@ class DealtHand:
         # then we'll be able to pivot the df and have it be rows of cut cards and columns of hands, and values should line up correctly
         # current way is a hack
 
+        _sub_df.drop(
+            columns=["hand_card_1", "hand_card_2", "hand_card_3", "hand_card_4"],
+            inplace=True,
+        )
+
+        self.pivoted_df = _sub_df.pivot(
+            columns="sorted_hand",
+            index="cut_card",
+            values="points",
+        )
+        self.pivoted_df = self.pivoted_df.reset_index()
 
         self.point_conjoined = _sub_df["points"].tolist()
         self.points = [
