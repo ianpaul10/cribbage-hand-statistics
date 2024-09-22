@@ -10,15 +10,18 @@ def sort_crib_hands_csv(csv_path: str, output_path: str):
             "hand_card_2",
             "hand_card_3",
             "hand_card_4",
-            "cut_card",
         ]
     ].apply(lambda row: sorted([str(item) for item in row]), axis=1)
     df["sorted_hand"] = df["sorted_hand"].apply(lambda x: ",".join(x))
 
-    df = df.drop(
-        columns=["hand_card_1", "hand_card_2", "hand_card_3", "hand_card_4", "cut_card"]
+    df["sorted_hand_plus_cut_card"] = df[["sorted_hand", "cut_card"]].apply(
+        lambda row: row["sorted_hand"] + "," + row["cut_card"], axis=1
     )
-    df.set_index("sorted_hand", inplace=True)
+
+    # df = df.drop(
+    #     columns=["hand_card_1", "hand_card_2", "hand_card_3", "hand_card_4", "cut_card"]
+    # )
+    df.set_index("sorted_hand_plus_cut_card", inplace=True)
 
     df.to_csv(output_path, index=True)
     df.to_parquet(output_path.replace(".csv", ".parquet"))
