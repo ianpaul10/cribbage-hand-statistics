@@ -3,6 +3,7 @@
 
 
 from dash import Dash, html, dcc, dash_table
+from dash.dependencies import Input, Output
 import plotly.express as px
 import pandas as pd
 
@@ -54,12 +55,19 @@ hand_obj_dict_list = list(hand_obj_dict.items())
 # hand_records = hand_obj.get_df().to_dict("records")
 hand_records = hand_obj.pivoted_df.to_dict("records")
 # hand_records = hand_obj.pivoted_df.to_dict(orient="list")
-print(hand_records)
-print([{"name": i, "id": i} for i in hand_obj.pivoted_df.columns])
+# print(hand_records)
+# print([{"name": i, "id": i} for i in hand_obj.pivoted_df.columns])
 
 dt = dash_table.DataTable(
     hand_records,
     [{"name": i, "id": i} for i in hand_obj.pivoted_df.columns],
+)
+
+img_upload_cmp = html.Div(
+    [
+        dcc.Upload(id="upload", children=html.Button("Upload an image")),
+        html.Img(id="image", width=500),
+    ]
 )
 
 app.layout = html.Div(
@@ -70,6 +78,7 @@ app.layout = html.Div(
         Dash: A web application framework for your data.
     """
         ),
+        html.Div(children=img_upload_cmp),
         # dcc.Graph(id="example-graph", figure=fig),
         # html.Div(children=row_of_hand_df),
         # html.Div(children=row_of_df["dealt_hand"]),
@@ -79,6 +88,24 @@ app.layout = html.Div(
         html.Div(children=dt),
     ]
 )
+
+# # Preview image or video after taking without sending to the server. This is
+# # helpful because the app is much slower if you send content to the server
+# # first.
+# app.clientside_callback(
+#     """
+#     function(contents) {
+#         // document.write(contents)
+#         if (contents === undefined) {
+#             return "";
+#         } else {
+#             return contents;
+#         }
+#     }
+#     """,
+#     Output("image", "src"),
+#     Input("upload", "contents"),
+# )
 
 if __name__ == "__main__":
     app.run(debug=True)
