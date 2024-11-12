@@ -17,8 +17,38 @@ def get_db_connection():
 
 def main():
     conn = get_db_connection()
-    # create_side_bar(conn)
+    create_side_bar(conn)
     create_page(conn)
+
+
+def create_side_bar(conn: duckdb.DuckDBPyConnection):
+    cur = conn.cursor()
+
+    with st.sidebar:
+        st.button("load sample data", on_click=load_sample_data, args=[conn])
+        files = st.file_uploader(
+            "select one or more CSV or JSON files", accept_multiple_files=True
+        )
+        load_files(conn, files)
+
+        st.divider()
+
+        table_list = ""
+        cur.execute("show all tables")
+        recs = cur.fetchall()
+
+        if len(recs) > 0:
+            st.markdown("# tables")
+
+        for rec in recs:
+            table_name = rec[2]
+            table_list += f"- {table_name}\n"
+            cur.execute(f"describe {table_name}")
+
+            for col in cur.fetchall():
+                table_list += f"    - {col[0]} {col[1]}\n"
+
+        st.markdown(table_list)
 
 
 def create_page(conn: duckdb.DuckDBPyConnection):
