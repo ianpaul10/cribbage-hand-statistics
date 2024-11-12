@@ -3,6 +3,7 @@ import pandas as pd
 from io import StringIO
 import numpy as np
 import duckdb
+from code_editor import code_editor
 
 
 # @st.cache_resource
@@ -51,7 +52,7 @@ def create_side_bar(conn: duckdb.DuckDBPyConnection):
 
 def load_sample_data(conn: duckdb.DuckDBPyConnection):
     # conn.read_json("csv_outputs/crib_hands_output_big_boi.parquet").to_table("posts")
-    conn.read_json("csv_outputs/crib_hands_sorted.parquet").to_table("posts")
+    conn.read_parquet("csv_outputs/crib_hands_sorted.parquet").to_table("posts")
 
 
 def create_page(conn: duckdb.DuckDBPyConnection):
