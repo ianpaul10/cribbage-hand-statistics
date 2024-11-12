@@ -56,12 +56,32 @@ def load_sample_data(conn: duckdb.DuckDBPyConnection):
     # conn.read_parquet("csv_outputs/crib_hands_sorted.parquet").to_table("posts")
 
 
+# should sort input string to make sure it matches one of the hands
+def sort_hand(hand: str) -> str:
+    cards = hand.replace(" ", "").split(",")
+    cards.sort()
+    return ",".join(cards)
+
+
 def create_page(conn: duckdb.DuckDBPyConnection):
     st.title("Welcome to my crib :duck:")
     st.write("Query your files with DuckDB")
     st.divider()
 
     cur = conn.cursor()
+
+    # hand_str = st.text_input("6 card hand", "QC,10H,JD,4S,3H,2S")
+    hand_str = st.text_input("4 card hand", "QC,TH,JD,5S")
+    # button to sort hand and then query db with sorted hand
+    if st.button("sort hand"):
+        sorted_hand = sort_hand(hand_str)
+        # TODO: add a check to make sure the hand is valid
+        cur.execute(f"select * from posts where sorted_hand = '{sorted_hand}'")
+        df = cur.fetch_df()
+        st.write(df)
+
+    st.divider()
+
     st.write(
         "hint: you can write multiple queries as long as each one ends with a semicolon"
     )
