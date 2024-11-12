@@ -51,12 +51,13 @@ def create_side_bar(conn: duckdb.DuckDBPyConnection):
 
 
 def load_sample_data(conn: duckdb.DuckDBPyConnection):
-    conn.read_parquet("csv_outputs/crib_hands_output_big_boi.parquet").to_table("posts")
+    conn.read_parquet("csv_outputs/crib_hands_sorted.parquet").to_table("posts")
+    # conn.read_parquet("csv_outputs/crib_hands_output_big_boi.parquet").to_table("posts")
     # conn.read_parquet("csv_outputs/crib_hands_sorted.parquet").to_table("posts")
 
 
 def create_page(conn: duckdb.DuckDBPyConnection):
-    st.title("ducklit :duck:")
+    st.title("Welcome to my crib :duck:")
     st.write("Query your files with DuckDB")
     st.divider()
 
