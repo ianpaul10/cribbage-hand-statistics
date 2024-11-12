@@ -4,8 +4,6 @@ from io import StringIO
 import numpy as np
 import duckdb
 
-st.title("Uber pickups in NYC")
-
 
 # @st.cache_resource
 def get_db_connection():
@@ -51,14 +49,38 @@ def create_side_bar(conn: duckdb.DuckDBPyConnection):
         st.markdown(table_list)
 
 
-def create_page(conn: duckdb.DuckDBPyConnection):
+def load_sample_data(conn: duckdb.DuckDBPyConnection):
+    # conn.read_json("csv_outputs/crib_hands_output_big_boi.parquet").to_table("posts")
+    conn.read_json("csv_outputs/crib_hands_sorted.parquet").to_table("posts")
 
-    # Create a text element and let the reader know the data is loading.
-    data_load_state = st.text("Loading data...")
-    # Load 10,000 rows of data into the dataframe.
-    data = load_data(10000)
-    # Notify the reader that the data was successfully loaded.
-    data_load_state.text("Done! (using st.cache_data)")
+
+def create_page(conn: duckdb.DuckDBPyConnection):
+    st.title("ducklit :duck:")
+    st.write("Query your files with DuckDB")
+    st.divider()
+
+    cur = conn.cursor()
+    st.write(
+        "hint: you can write multiple queries as long as each one ends with a semicolon"
+    )
+    st.write("ctrl+enter to run the SQL")
+    res = code_editor(code="", lang="sql", key="editor")
+
+    for query in res["text"].split(";"):
+        if query.strip() == "":
+            continue
+
+        try:
+            cur.execute(query)
+            df = cur.fetch_df()
+            st.write(df)
+        except Exception as e:
+            st.error(e)
+
+    if st.button("reset database"):
+        st.cache_resource.clear()
+        st.session_state["editor"]["text"] = ""
+        st.rerun()
 
 
 @st.cache_data
