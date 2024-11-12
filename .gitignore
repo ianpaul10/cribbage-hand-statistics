@@ -26,3 +26,4 @@ scripts/local
 
 # Hiding from git for now because they're massive. Need to put them in a parquet or pickle file  
 csv_outputs
+.aider*
