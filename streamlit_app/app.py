@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from io import StringIO
+from itertools import combinations
 import numpy as np
 import duckdb
 from code_editor import code_editor
@@ -63,12 +64,39 @@ def sort_hand(hand: str) -> str:
     return ",".join(cards)
 
 
+def get_hands(six_card_hand: str) -> list:
+    cards = six_card_hand.replace(" ", "").split(",")
+    possible_hands_tuples = list(combinations(cards, r=4))
+
+    sorted_hands = [sort_hand(",".join(hand)) for hand in possible_hands_tuples]
+    return sorted_hands
+    # "unique_hands_dealt = math.comb(len(deck), starting_hand_size)\n",
+
+
 def create_page(conn: duckdb.DuckDBPyConnection):
     st.title("Welcome to my crib :duck:")
     st.write("Query your files with DuckDB")
+
     st.divider()
 
     cur = conn.cursor()
+
+    st.write("six card deal, all possible four card hands")
+    six_card_hand = st.text_input("6 card hand", "QC,TH,JD,4S,3H,2S")
+    dix_card_calc_button = st.button("calculate all possibilities")
+
+    if dix_card_calc_button:
+        sorted_hands = get_hands(six_card_hand)
+        sorted_hands = [f"'{hand}'" for hand in sorted_hands]
+        sored_hands_str = ",".join(sorted_hands)
+        cur.execute(f"select * from posts where sorted_hand in ({sored_hands_str})")
+        df = cur.fetch_df()
+        st.write(f"num of possible hands: {len(sorted_hands)}")
+        st.write(f"num of possible outcomes with possible crib cards: {len(df)}")
+
+        st.write(df)
+
+    st.divider()
 
     # hand_str = st.text_input("6 card hand", "QC,10H,JD,4S,3H,2S")
     hand_str = st.text_input("4 card hand", "QC,TH,JD,5S")
