@@ -1,12 +1,14 @@
 import streamlit as st
 import pandas as pd
-from io import StringIO
+from io import StringIO, BytesIO
 from itertools import combinations
 import numpy as np
 import duckdb
 from code_editor import code_editor
-import numpy as np
 from PIL import Image
+import os
+from groq import Groq
+from groq.types import ImageBinary
 
 
 @st.cache_resource
@@ -27,6 +29,12 @@ def create_side_bar(conn: duckdb.DuckDBPyConnection):
     cur = conn.cursor()
 
     with st.sidebar:
+        # Add Groq API Key input
+        api_key = st.text_input("Groq API Key", type="password")
+        if api_key:
+            os.environ["GROQ_API_KEY"] = api_key
+            
+        st.divider()
         st.button(
             "load sample data",
             on_click=load_sample_data,
@@ -72,13 +80,54 @@ def sort_hand(hand: str) -> str:
 
 
 def detect_cards_from_image(image):
-    # Convert PIL Image to OpenCV format
-    # opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+    # Initialize Groq client
+    if "GROQ_API_KEY" not in os.environ:
+        raise ValueError("Please set your Groq API Key in the sidebar first")
+        
+    client = Groq(api_key=os.environ["GROQ_API_KEY"])
+    
+    # Convert PIL Image to bytes
+    img_byte_arr = BytesIO()
+    image.save(img_byte_arr, format='PNG')
+    img_byte_arr = img_byte_arr.getvalue()
 
-    # TODO: Implement card detection logic here
-    # This is where we'll add the card recognition code
-    # For now, return a placeholder
-    return "QC,TH,JD,4S,3H,2S"
+    # Create the prompt for the vision model
+    prompt = """
+    Look at this image of playing cards and:
+    1. Identify each playing card visible in the image
+    2. List them in the format: [Value][Suit], where:
+       - Values are: A,2,3,4,5,6,7,8,9,T,J,Q,K
+       - Suits are: C (Clubs), D (Diamonds), H (Hearts), S (Spades)
+    3. Return the cards as a comma-separated list
+    Example format: "AC,2H,KD,TS"
+    """
+
+    # Make the API call
+    response = client.chat.completions.create(
+        model="llama2-70b-v2",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_binary", "image_binary": {"data": img_byte_arr}}
+                ]
+            }
+        ]
+    )
+
+    # Extract the detected cards from the response
+    detected_cards = response.choices[0].message.content.strip()
+    
+    # Basic validation that the format is correct
+    cards = detected_cards.split(',')
+    valid_cards = []
+    for card in cards:
+        card = card.strip()
+        if len(card) == 2 and card[0] in 'A23456789TJQK' and card[1] in 'CDHS':
+            valid_cards.append(card)
+    
+    return ','.join(valid_cards)
 
 
 def get_hands(six_card_hand: str) -> list:
@@ -106,17 +155,17 @@ def create_page(conn: duckdb.DuckDBPyConnection):
     uploaded_image = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
     if uploaded_image is not None:
-        # Display the uploaded image
         image = Image.open(uploaded_image)
-        st.image(image, caption="Uploaded Image", use_column_width=True)
-
-        # Add a button to process the image
+        st.image(image, caption='Uploaded Image', use_column_width=True)
+        
         if st.button("Detect Cards"):
-            detected_hand = detect_cards_from_image(image)
-            st.write(f"Detected cards: {detected_hand}")
-
-            # You can automatically fill the text input with the detected cards
-            st.session_state["detected_hand"] = detected_hand
+            with st.spinner('Analyzing image...'):
+                try:
+                    detected_hand = detect_cards_from_image(image)
+                    st.success(f"Detected cards: {detected_hand}")
+                    st.session_state['detected_hand'] = detected_hand
+                except Exception as e:
+                    st.error(f"Error detecting cards: {str(e)}")
 
     st.write(
         "Input 6 or 5 card hand, depending on whether you're playing a 2 or 3 person game. All possible 4 card hands + cut card will be calculated to determine the optimal hand to play."
