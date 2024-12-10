@@ -5,6 +5,8 @@ from itertools import combinations
 import numpy as np
 import duckdb
 from code_editor import code_editor
+import numpy as np
+from PIL import Image
 
 
 @st.cache_resource
@@ -69,6 +71,16 @@ def sort_hand(hand: str) -> str:
     return ",".join(cards)
 
 
+def detect_cards_from_image(image):
+    # Convert PIL Image to OpenCV format
+    # opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+
+    # TODO: Implement card detection logic here
+    # This is where we'll add the card recognition code
+    # For now, return a placeholder
+    return "QC,TH,JD,4S,3H,2S"
+
+
 def get_hands(six_card_hand: str) -> list:
     cards = six_card_hand.replace(" ", "").split(",")
     if len(cards) not in {5, 6}:
@@ -89,6 +101,22 @@ def create_page(conn: duckdb.DuckDBPyConnection):
     st.divider()
 
     cur = conn.cursor()
+
+    st.write("Upload an image of your cards")
+    uploaded_image = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+
+    if uploaded_image is not None:
+        # Display the uploaded image
+        image = Image.open(uploaded_image)
+        st.image(image, caption="Uploaded Image", use_column_width=True)
+
+        # Add a button to process the image
+        if st.button("Detect Cards"):
+            detected_hand = detect_cards_from_image(image)
+            st.write(f"Detected cards: {detected_hand}")
+
+            # You can automatically fill the text input with the detected cards
+            st.session_state["detected_hand"] = detected_hand
 
     st.write(
         "Input 6 or 5 card hand, depending on whether you're playing a 2 or 3 person game. All possible 4 card hands + cut card will be calculated to determine the optimal hand to play."
