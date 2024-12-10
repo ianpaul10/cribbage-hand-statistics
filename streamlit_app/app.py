@@ -33,7 +33,7 @@ def create_side_bar(conn: duckdb.DuckDBPyConnection):
         api_key = st.text_input("Groq API Key", type="password")
         if api_key:
             os.environ["GROQ_API_KEY"] = api_key
-            
+
         st.divider()
         st.button(
             "load sample data",
@@ -83,23 +83,25 @@ def detect_cards_from_image(image):
     # Initialize Groq client
     if "GROQ_API_KEY" not in os.environ:
         raise ValueError("Please set your Groq API Key in the sidebar first")
-        
+
     client = Groq(api_key=os.environ["GROQ_API_KEY"])
-    
+
     # Convert PIL Image to bytes
     img_byte_arr = BytesIO()
-    image.save(img_byte_arr, format='PNG')
+    image.save(img_byte_arr, format="PNG")
     img_byte_arr = img_byte_arr.getvalue()
 
     # Create the prompt for the vision model
     prompt = """
     Look at this image of playing cards and:
-    1. Identify each playing card visible in the image
+    1. Identify each playing card visible in the image. There should be 4-6 cards.
     2. List them in the format: [Value][Suit], where:
        - Values are: A,2,3,4,5,6,7,8,9,T,J,Q,K
        - Suits are: C (Clubs), D (Diamonds), H (Hearts), S (Spades)
     3. Return the cards as a comma-separated list
     Example format: "AC,2H,KD,TS"
+
+    DO NOT HALUCINATE. DO NOT INCLUDE ANY OTHER TEXT.
     """
 
     # Make the API call
@@ -110,24 +112,24 @@ def detect_cards_from_image(image):
                 "role": "user",
                 "content": [
                     {"type": "text", "text": prompt},
-                    {"type": "image_binary", "image_binary": {"data": img_byte_arr}}
-                ]
+                    {"type": "image_binary", "image_binary": {"data": img_byte_arr}},
+                ],
             }
-        ]
+        ],
     )
 
     # Extract the detected cards from the response
     detected_cards = response.choices[0].message.content.strip()
-    
+
     # Basic validation that the format is correct
-    cards = detected_cards.split(',')
+    cards = detected_cards.split(",")
     valid_cards = []
     for card in cards:
         card = card.strip()
-        if len(card) == 2 and card[0] in 'A23456789TJQK' and card[1] in 'CDHS':
+        if len(card) == 2 and card[0] in "A23456789TJQK" and card[1] in "CDHS":
             valid_cards.append(card)
-    
-    return ','.join(valid_cards)
+
+    return ",".join(valid_cards)
 
 
 def get_hands(six_card_hand: str) -> list:
@@ -156,14 +158,14 @@ def create_page(conn: duckdb.DuckDBPyConnection):
 
     if uploaded_image is not None:
         image = Image.open(uploaded_image)
-        st.image(image, caption='Uploaded Image', use_column_width=True)
-        
+        st.image(image, caption="Uploaded Image", use_column_width=True)
+
         if st.button("Detect Cards"):
-            with st.spinner('Analyzing image...'):
+            with st.spinner("Analyzing image..."):
                 try:
                     detected_hand = detect_cards_from_image(image)
                     st.success(f"Detected cards: {detected_hand}")
-                    st.session_state['detected_hand'] = detected_hand
+                    st.session_state["detected_hand"] = detected_hand
                 except Exception as e:
                     st.error(f"Error detecting cards: {str(e)}")
 
