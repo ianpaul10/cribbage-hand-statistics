@@ -7,7 +7,7 @@ import duckdb
 from code_editor import code_editor
 
 
-# @st.cache_resource
+@st.cache_resource
 def get_db_connection():
     if "duck_conn" not in st.session_state:
         st.session_state["duck_conn"] = duckdb.connect(":memory:")
@@ -25,11 +25,16 @@ def create_side_bar(conn: duckdb.DuckDBPyConnection):
     cur = conn.cursor()
 
     with st.sidebar:
-        st.button("load sample data", on_click=load_sample_data, args=[conn])
+        st.button(
+            "load sample data",
+            on_click=load_sample_data,
+            args=[conn],  # pyright: ignore[reportArgumentType]
+        )
         files = st.file_uploader(
             "select one or more CSV or JSON files", accept_multiple_files=True
         )
-        load_files(conn, files)
+
+        load_files(conn, files)  # pyright: ignore[reportArgumentType]
 
         st.divider()
 
@@ -66,6 +71,10 @@ def sort_hand(hand: str) -> str:
 
 def get_hands(six_card_hand: str) -> list:
     cards = six_card_hand.replace(" ", "").split(",")
+    if len(cards) not in {5, 6}:
+        # TODO: check to make sure it's not less than 5 cards
+        # only take first 5 or 6 cards
+        cards = cards[:5]
     possible_hands_tuples = list(combinations(cards, r=4))
 
     sorted_hands = [sort_hand(",".join(hand)) for hand in possible_hands_tuples]
@@ -81,8 +90,10 @@ def create_page(conn: duckdb.DuckDBPyConnection):
 
     cur = conn.cursor()
 
-    st.write("six card deal, all possible four card hands")
-    six_card_hand = st.text_input("6 card hand", "QC,TH,JD,4S,3H,2S")
+    st.write(
+        "Input 6 or 5 card hand, depending on whether you're playing a 2 or 3 person game. All possible 4 card hands + cut card will be calculated to determine the optimal hand to play."
+    )
+    six_card_hand = st.text_input("Add 5 or 6 card hand", "QC,TH,JD,4S,3H,2S")
     dix_card_calc_button = st.button("calculate all possibilities")
 
     if dix_card_calc_button:
@@ -99,7 +110,7 @@ def create_page(conn: duckdb.DuckDBPyConnection):
     st.divider()
 
     # hand_str = st.text_input("6 card hand", "QC,10H,JD,4S,3H,2S")
-    hand_str = st.text_input("4 card hand", "QC,TH,JD,5S")
+    hand_str = st.text_input("5 card deal", "QC,TH,JD,5S,4D")
     # button to sort hand and then query db with sorted hand
     if st.button("sort hand"):
         sorted_hand = sort_hand(hand_str)
