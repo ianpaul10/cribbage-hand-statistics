@@ -1,14 +1,12 @@
+import base64
 import streamlit as st
 import pandas as pd
 from io import StringIO, BytesIO
 from itertools import combinations
-import numpy as np
 import duckdb
 from code_editor import code_editor
-from PIL import Image
 import os
 from groq import Groq
-from groq.types import ImageBinary
 
 
 @st.cache_resource
@@ -79,17 +77,10 @@ def sort_hand(hand: str) -> str:
     return ",".join(cards)
 
 
-def detect_cards_from_image(image):
-    # Initialize Groq client
-    if "GROQ_API_KEY" not in os.environ:
-        raise ValueError("Please set your Groq API Key in the sidebar first")
+def _upload_image_to_detection_service(image: BytesIO):
+    base64_image = base64.b64encode(image.getvalue()).decode("utf-8")
 
-    client = Groq(api_key=os.environ["GROQ_API_KEY"])
-
-    # Convert PIL Image to bytes
-    img_byte_arr = BytesIO()
-    image.save(img_byte_arr, format="PNG")
-    img_byte_arr = img_byte_arr.getvalue()
+    client = Groq()
 
     # Create the prompt for the vision model
     prompt = """
@@ -104,22 +95,37 @@ def detect_cards_from_image(image):
     DO NOT HALUCINATE. DO NOT INCLUDE ANY OTHER TEXT.
     """
 
-    # Make the API call
-    response = client.chat.completions.create(
-        model="llama2-70b-v2",
+    completion = client.chat.completions.create(
+        model="llama-3.2-90b-vision-preview",
         messages=[
             {
                 "role": "user",
                 "content": [
                     {"type": "text", "text": prompt},
-                    {"type": "image_binary", "image_binary": {"data": img_byte_arr}},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpg;base64,{base64_image}",
+                            # example base img
+                            # "url": "https://thumbs.dreamstime.com/z/poker-cards-straight-flush-spades-hand-royal-playing-34943288.jpg",
+                        },
+                    },
                 ],
             }
         ],
+        temperature=1,
+        max_tokens=1024,
+        top_p=1,
+        stream=False,
+        stop=None,
     )
 
+    print(f"{completion=}")
+
     # Extract the detected cards from the response
-    detected_cards = response.choices[0].message.content.strip()
+    detected_cards = completion.choices[0].message.content.strip()
+
+    print(f"{detected_cards=}")
 
     # Basic validation that the format is correct
     cards = detected_cards.split(",")
@@ -157,13 +163,12 @@ def create_page(conn: duckdb.DuckDBPyConnection):
     uploaded_image = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
     if uploaded_image is not None:
-        image = Image.open(uploaded_image)
-        st.image(image, caption="Uploaded Image", use_column_width=True)
+        st.image(uploaded_image, caption="Uploaded Image", use_column_width=True)
 
         if st.button("Detect Cards"):
             with st.spinner("Analyzing image..."):
                 try:
-                    detected_hand = detect_cards_from_image(image)
+                    detected_hand = _upload_image_to_detection_service(uploaded_image)
                     st.success(f"Detected cards: {detected_hand}")
                     st.session_state["detected_hand"] = detected_hand
                 except Exception as e:
